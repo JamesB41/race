@@ -3,19 +3,15 @@ package intcode
 import (
 	"fmt"
 	"strconv"
-	"time"
 )
 
 
 type IntCode struct {
 	Program [] int
-	RetVal int
 	InChannel chan int
 	OutChannel chan int
 	AnswerChannel chan int
-	DoneChannel chan bool
 	Id string
-	done bool
 }
 
 func (i *IntCode) LoadProgram (p []string) {
@@ -57,14 +53,6 @@ func getOpcode(inst string) int {
 
 func (i *IntCode) Run() {
 	pos := 0
-
-	if i.Id == "E" {
-		go func() {
-			<- i.DoneChannel
-			fmt.Println("E knows we're done!")
-			i.done = true
-		}()
-	}
 
 	for {
 		instruction := fmt.Sprintf("%05v", strconv.Itoa(i.Program[pos]))
@@ -135,10 +123,10 @@ func (i *IntCode) Run() {
 			pos += 4
 
 		case 99:
-			fmt.Println("halting", i.Id, time.Now().String())
-
 			if i.Id == "A" {
-				i.DoneChannel <- true
+				// Once A stops, wait for the final output from E
+				answer := <- i.InChannel
+				i.AnswerChannel <- answer
 			}
 
 			return
@@ -155,19 +143,11 @@ func (i *IntCode) mult(x int, y int, z int) {
 }
 
 func (i *IntCode) inp(x int) {
+//	fmt.Println(i.Id, "received input", x
 	input := <- i.InChannel
 	i.Program[x] = input
 }
 
 func (i *IntCode) out(x int) {
-	if i.done {
-		fmt.Println("Outputting when done from", i.Id)
-	}
-
-	if i.done && i.Id == "E" {
-		i.AnswerChannel <- x
-	} else {
-		i.OutChannel <- x
-	}
-	i.RetVal = x
+	i.OutChannel <- x
 }
