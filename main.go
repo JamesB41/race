@@ -10,16 +10,29 @@ import (
 )
 
 func main() {
+	arr := []int{5,6,7,8,9}
+	phaseSettings := permutations(arr)
+
+	maxValue := -10000000000
+
+	// Part 1
+	for _, phaseSetting := range phaseSettings {
+		result := solve(phaseSetting)
+
+		if result > maxValue {
+			 maxValue = result
+		}
+	}
+
+	fmt.Println("Part 2:", maxValue)
+}
+
+func solve(phaseSetting []int) int {
 	programA := loadProgram()
 	programB := loadProgram()
 	programC := loadProgram()
 	programD := loadProgram()
 	programE := loadProgram()
-
-	arr := []int{5,6,7,8,9}
-	phaseSettings := permutations(arr)
-
-	maxValue := -10000000000
 
 	ch0 := make(chan int)
 	ch1 := make(chan int)
@@ -29,39 +42,29 @@ func main() {
 
 	answerChannel := make(chan int)
 
-	// Part 1
-	for _, phaseSetting := range phaseSettings {
-		fmt.Println("Attempting phase setting", phaseSetting)
-		ampA := intcode.IntCode{Program: programA, InChannel: ch0, OutChannel: ch1, Id: "A", AnswerChannel: answerChannel}
-		ampB := intcode.IntCode{Program: programB, InChannel: ch1, OutChannel: ch2, Id: "B"}
-		ampC := intcode.IntCode{Program: programC, InChannel: ch2, OutChannel: ch3, Id: "C"}
-		ampD := intcode.IntCode{Program: programD, InChannel: ch3, OutChannel: ch4, Id: "D"}
-		ampE := intcode.IntCode{Program: programE, InChannel: ch4, OutChannel: ch0, Id: "E"}
+	ampA := intcode.IntCode{Program: programA, InChannel: ch0, OutChannel: ch1, Id: "A", AnswerChannel: answerChannel}
+	ampB := intcode.IntCode{Program: programB, InChannel: ch1, OutChannel: ch2, Id: "B"}
+	ampC := intcode.IntCode{Program: programC, InChannel: ch2, OutChannel: ch3, Id: "C"}
+	ampD := intcode.IntCode{Program: programD, InChannel: ch3, OutChannel: ch4, Id: "D"}
+	ampE := intcode.IntCode{Program: programE, InChannel: ch4, OutChannel: ch0, Id: "E"}
 
-		go ampA.Run()
-		go ampB.Run()
-		go ampC.Run()
-		go ampD.Run()
-		go ampE.Run()
+	go ampA.Run()
+	go ampB.Run()
+	go ampC.Run()
+	go ampD.Run()
+	go ampE.Run()
 
-		ch0 <- phaseSetting[0]
-		ch1 <- phaseSetting[1]
-		ch2 <- phaseSetting[2]
-		ch3 <- phaseSetting[3]
-		ch4 <- phaseSetting[4]
+	ch0 <- phaseSetting[0]
+	ch1 <- phaseSetting[1]
+	ch2 <- phaseSetting[2]
+	ch3 <- phaseSetting[3]
+	ch4 <- phaseSetting[4]
 
-		ch0 <- 0
+	ch0 <- 0
 
-		answer := <- answerChannel
+	answer := <- answerChannel
 
-		fmt.Println("Got", answer)
-
-		if answer > maxValue {
-			 maxValue = answer
-		}
-	}
-
-	fmt.Println("Part 2:", maxValue)
+	return answer
 }
 
 func loadProgram() []int {
