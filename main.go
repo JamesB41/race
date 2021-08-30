@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"sandbox/intcode"
+	"race/intcode"
 	"strconv"
 	"strings"
 )
